@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { GraduationCap } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface User {
   id: string;
@@ -20,31 +21,56 @@ interface LoginPageProps {
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (role: 'student' | 'teacher' | 'admin') => {
-    // Mock login - in real app, this would validate credentials
-    const mockUsers = {
-      student: {
-        id: '1',
-        name: '张三',
-        role: 'student' as const,
-        email: 'zhangsan@student.edu.cn',
-      },
-      teacher: {
-        id: '2',
-        name: '李老师',
-        role: 'teacher' as const,
-        email: 'li@teacher.edu.cn',
-      },
-      admin: {
-        id: '3',
-        name: '管理员',
-        role: 'admin' as const,
-        email: 'admin@edu.cn',
-      },
-    };
+  const handleLogin = async (role: 'student' | 'teacher' | 'admin') => {
+    console.log('Login button clicked', { role, email });
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/login/', {
+        method: 'POST',
+        mode: 'cors',
+        body: JSON.stringify({ identifier: email, password }),
+      });
 
-    onLogin(mockUsers[role]);
+      // res: { token, user: { student_id, email, role } }
+      localStorage.setItem('token', res.token);
+      const user = {
+        id: res.user.student_id || res.user.id || res.user.email || '',
+        name: res.user.email || res.user.student_id || '',
+        role: res.user.role as 'student' | 'teacher' | 'admin',
+        email: res.user.email || '',
+      };
+      onLogin(user);
+    } catch (err: any) {
+      console.error('login error', err);
+      // Normalize backend error payloads into a user-friendly string
+      const payload = err?.data;
+      let message = '登录失败';
+      if (!payload) {
+        message = '登录失败';
+      } else if (typeof payload === 'string') {
+        message = payload;
+      } else if (payload.detail && typeof payload.detail === 'string') {
+        message = payload.detail;
+      } else if (typeof payload === 'object') {
+        // payload may be like { identifier: ['This field is required'] } or { non_field_errors: ['Invalid credentials'] }
+        const values = Object.values(payload).flat();
+        if (values.length > 0) {
+          message = String(values[0]);
+        }
+      }
+
+      if (message.toLowerCase().includes('invalid')) {
+        setError('请核对您的账户与密码');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,6 +86,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           <CardDescription>请选择您的角色登录</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-700">
+              {error}
+            </div>
+          )}
           <Tabs defaultValue="student" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="student">学生</TabsTrigger>
@@ -94,8 +125,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  登录
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? '登录中...' : '登录'}
                 </Button>
               </form>
             </TabsContent>
@@ -127,8 +158,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  登录
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? '登录中...' : '登录'}
                 </Button>
               </form>
             </TabsContent>
@@ -160,8 +191,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  登录
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? '登录中...' : '登录'}
                 </Button>
               </form>
             </TabsContent>

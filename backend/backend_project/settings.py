@@ -21,10 +21,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
     'users',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    # keep CorsMiddleware as high as possible
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -100,3 +103,23 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
 }
+
+# CORS (for frontend dev server)
+# Allow the Vite dev server origins; adjust in production
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    # Some dev setups run on port 3000 (e.g. React default). Add those too.
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+# If you prefer to allow all origins during development, uncomment:
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# Ensure Authorization header is allowed in CORS requests
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'authorization',
+]

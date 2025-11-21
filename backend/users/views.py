@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
 class RegisterAPIView(generics.CreateAPIView):
@@ -45,3 +47,12 @@ class LoginAPIView(APIView):
 
         token, _ = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'user': UserSerializer(user).data})
+
+
+class MeAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        return Response({'user': UserSerializer(user).data})
