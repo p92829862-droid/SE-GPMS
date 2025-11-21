@@ -1,0 +1,7 @@
+Django>=4.2
+djangorestframework>=3.14
+# Note: Token auth is provided by `rest_framework.authtoken` which is included
+# in `djangorestframework`. There is no separate PyPI package named
+# `djangorestframework-authtoken`.
+# Optional: install corsheaders if front-end is hosted on different origin
+# django-cors-headers>=3.15
